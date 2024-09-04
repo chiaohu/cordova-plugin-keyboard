@@ -1,38 +1,34 @@
 import Foundation
 import UIKit
-import WebKit // 確保導入 WebKit 以使用 WKWebView
+import WebKit
 
-@objc(KeyboardPlugin) class KeyboardPlugin: CDVPlugin, UITextFieldDelegate {
+@objc(KeyboardPlugin) class KeyboardPlugin: CDVPlugin {
     
-    // 定義透明的 UITextField
-    var transparentTextField: UITextField?
-
     @objc(addMinusButtonToKeyboard:)
     func addMinusButtonToKeyboard(command: CDVInvokedUrlCommand) {
-        // 創建透明的 UITextField
-        if transparentTextField == nil {
-            setupTransparentTextField()
+        guard let webView = self.webView as? WKWebView else {
+            let pluginResult = CDVPluginResult(status: CDVCommandStatus_ERROR, messageAs: "WebView not found")
+            self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
+            return
         }
         
-        // 將焦點設置到透明的 UITextField
-        transparentTextField?.becomeFirstResponder()
+        // 創建自定義工具欄
+        let toolbar = createToolbar()
+        
+        // 找到 WebView 中的所有輸入框
+        webView.evaluateJavaScript("document.querySelectorAll('input[type=number]').forEach(input => input.readOnly = true);", completionHandler: nil)
+        
+        // 遍歷 WebView 中的所有子視圖，查找 `UITextField` 或 `UITextView`
+        for subview in webView.subviews {
+            if let scrollView = subview as? UIScrollView {
+                for textField in scrollView.subviews where textField is UITextField {
+                    (textField as! UITextField).inputAccessoryView = toolbar
+                }
+            }
+        }
         
         let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: "Keyboard setup completed")
         self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
-    }
-
-    // 初始化透明的 UITextField 並設置工具欄
-    func setupTransparentTextField() {
-        transparentTextField = UITextField(frame: CGRect(x: 0, y: 0, width: self.webView!.frame.width, height: 40))
-        transparentTextField?.backgroundColor = UIColor.clear
-        transparentTextField?.textColor = UIColor.clear
-        transparentTextField?.tintColor = UIColor.clear
-        transparentTextField?.keyboardType = .numberPad
-        transparentTextField?.delegate = self // 設置代理
-        transparentTextField?.inputAccessoryView = createToolbar() // 設置自定義工具欄
-        
-        // 將透明的 UITextField 添加到 WebView 的上層
-        self.webView?.addSubview(transparentTextField!)
     }
 
     // 創建工具欄
@@ -56,48 +52,19 @@ import WebKit // 確保導入 WebKit 以使用 WKWebView
     }
 
     @objc func minusButtonAction() {
-        // 在透明的 UITextField 中插入 "-"
-        if let textField = transparentTextField {
-            let currentText = textField.text ?? ""
-            textField.text = currentText + "-"
-            updateWebViewInputField(text: textField.text!)
-        }
+        // 當 "-" 按鈕被按下時，通知 WebView 層
+        notifyJSAboutMinusButton()
     }
 
     @objc func doneButtonAction() {
-        // 收起鍵盤並隱藏透明的 UITextField
-        hideTransparentTextField()
+        // 收起鍵盤
+        self.webView?.endEditing(true)
     }
 
-    // 隱藏並移除透明的 UITextField
-    func hideTransparentTextField() {
-        if let textField = transparentTextField {
-            textField.resignFirstResponder()
-            textField.removeFromSuperview()
-            transparentTextField = nil
-        }
-    }
-
-    // 當透明的 UITextField 輸入變化時調用此方法
-    func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
-        let currentText = textField.text ?? ""
-        let updatedText = (currentText as NSString).replacingCharacters(in: range, with: string)
-        
-        updateWebViewInputField(text: updatedText)
-        return true
-    }
-
-    // 更新 WebView 中的 HTML 輸入框
-    func updateWebViewInputField(text: String) {
+    // 通知 JavaScript 關於 "-" 按鈕的點擊
+    func notifyJSAboutMinusButton() {
         if let webView = self.webView as? WKWebView {
-            // 使用 JavaScript 設置 HTML 輸入框的值並保持焦點
-            let js = """
-            var activeElement = document.activeElement;
-            if (activeElement && activeElement.tagName === 'INPUT') {
-                activeElement.value = '\(text)';
-                activeElement.focus();
-            }
-            """
+            let js = "window.dispatchEvent(new CustomEvent('minusButtonClicked'));"
             webView.evaluateJavaScript(js) { _, error in
                 if let error = error {
                     print("Error evaluating JavaScript: \(error.localizedDescription)")
@@ -112,7 +79,6 @@ import WebKit // 確保導入 WebKit 以使用 WKWebView
     }
 
     @objc func keyboardWillHide(notification: Notification) {
-        // 當鍵盤隱藏時，也隱藏透明的 UITextField
-        hideTransparentTextField()
+        // 這裡可以添加額外的邏輯來處理鍵盤隱藏時的狀態
     }
 }
