@@ -8,6 +8,7 @@ import UIKit
     var currentInputField: UITextField?
 
     @objc(addMinusButtonToKeyboard:)
+    print("addMinusButtonToKeyboard called") // 添加日誌
     func addMinusButtonToKeyboard(command: CDVInvokedUrlCommand) {
         // 為當前焦點輸入框設置自定義鍵盤
         addDoneButtonOnKeyboard()
@@ -18,6 +19,7 @@ import UIKit
 
     // 設置鍵盤上的自定義按鈕
     func addDoneButtonOnKeyboard() {
+        print("Setting up custom toolbar for keyboard") // 添加日誌
         // 創建自定義工具欄
         let doneToolbar: UIToolbar = UIToolbar(frame: CGRect(x: 0, y: 0, width: 320, height: 50))
         doneToolbar.barStyle = UIBarStyle.default
