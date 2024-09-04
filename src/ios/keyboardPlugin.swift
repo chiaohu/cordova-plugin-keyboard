@@ -3,63 +3,103 @@ import UIKit
 import WebKit
 
 @objc(KeyboardPlugin) class KeyboardPlugin: CDVPlugin {
+    
+    // 定義工具欄
+    var doneToolbar: UIToolbar!
 
-    @objc(addMinusButtonToKeyboard:)
-    func addMinusButtonToKeyboard(command: CDVInvokedUrlCommand) {
-        // 設置 WebView 中當前聚焦的輸入框的自定義鍵盤
-        if let webView = self.webView as? WKWebView {
-            addCustomKeyboardAccessory(to: webView)
-        }
-
-        let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: "Keyboard setup completed")
-        self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
+    override func pluginInitialize() {
+        super.pluginInitialize()
+        setupToolbar()
+        NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow(notification:)), name: UIResponder.keyboardWillShowNotification, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide(notification:)), name: UIResponder.keyboardWillHideNotification, object: nil)
     }
 
-    // 為 WebView 中的輸入框設置自定義工具欄
-    func addCustomKeyboardAccessory(to webView: WKWebView) {
-        // 構建自定義工具欄
-        let doneToolbar: UIToolbar = UIToolbar()
-        doneToolbar.sizeToFit()
-        
+    // 設置工具欄
+    func setupToolbar() {
+        doneToolbar = UIToolbar(frame: CGRect(x: 0, y: 0, width: self.webView!.frame.width, height: 50))
+        doneToolbar.barStyle = .default
+
         let flexSpace = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
-        let minusButton = UIBarButtonItem(title: "－", style: .plain, target: self, action: #selector(minusButtonTapped))
-        let doneButton = UIBarButtonItem(title: "完成", style: .done, target: self, action: #selector(doneButtonTapped))
-        
-        doneToolbar.items = [minusButton, flexSpace, doneButton]
-        
-        // 設置所有 HTML 輸入框的輔助視圖
-        let js = """
-        (function() {
-            var inputs = document.querySelectorAll('input[type="text"], input[type="number"]');
-            for (var i = 0; i < inputs.length; i++) {
-                inputs[i].blur(); // 暫時移除焦點以設置自定義輔助視圖
-                inputs[i].focus(); // 恢復焦點以顯示鍵盤
-            }
-        })();
-        """
-        webView.evaluateJavaScript(js) { [weak self] _, error in
-            if let error = error {
-                print("Error evaluating JavaScript: \(error.localizedDescription)")
-            } else {
-                // 設置工具欄為輸入框的 inputAccessoryView
-                webView.inputAccessoryView = doneToolbar
+        let minusBtn = UIBarButtonItem(title: "-", style: .plain, target: self, action: #selector(minusButtonAction))
+        let doneBtn = UIBarButtonItem(title: "確定", style: .done, target: self, action: #selector(doneButtonAction))
+
+        doneToolbar.items = [minusBtn, flexSpace, doneBtn]
+        doneToolbar.sizeToFit()
+
+        // 將工具欄添加到 WebView 的父視圖中
+        if let webView = self.webView as? WKWebView {
+            webView.superview?.addSubview(doneToolbar)
+            adjustToolbarPosition()
+        }
+    }
+
+    @objc func minusButtonAction() {
+        // 處理 "-" 按鈕點擊事件
+        print("Minus button pressed")
+        if let webView = self.webView as? WKWebView {
+            let js = """
+            (function() {
+                var inputs = document.querySelectorAll('input[type="text"], input[type="number"]');
+                for (var i = 0; i < inputs.length; i++) {
+                    var input = inputs[i];
+                    if (document.activeElement === input) {
+                        input.value += '-';
+                        input.focus();
+                    }
+                }
+            })();
+            """
+            webView.evaluateJavaScript(js) { _, error in
+                if let error = error {
+                    print("Error evaluating JavaScript: \(error.localizedDescription)")
+                }
             }
         }
     }
 
-    @objc func minusButtonTapped() {
-        // 使用 JavaScript 在當前聚焦的 HTML 輸入框中插入 "-"
-        let js = "document.activeElement.value += '-';"
+    @objc func doneButtonAction() {
+        // 隱藏工具欄
+        hideToolbar()
         if let webView = self.webView as? WKWebView {
-            webView.evaluateJavaScript(js, completionHandler: nil)
+            let js = "document.activeElement.blur();"
+            webView.evaluateJavaScript(js) { _, error in
+                if let error = error {
+                    print("Error evaluating JavaScript: \(error.localizedDescription)")
+                }
+            }
         }
     }
 
-    @objc func doneButtonTapped() {
-        // 收起鍵盤
-        let js = "document.activeElement.blur();"
+    // 隱藏工具欄
+    func hideToolbar() {
+        doneToolbar.removeFromSuperview()
+    }
+
+    // 當鍵盤顯示時調整工具欄位置
+    @objc func keyboardWillShow(notification: Notification) {
+        adjustToolbarPosition()
+    }
+
+    // 當鍵盤隱藏時隱藏工具欄
+    @objc func keyboardWillHide(notification: Notification) {
+        hideToolbar()
+    }
+
+    // 調整工具欄的位置
+    func adjustToolbarPosition() {
         if let webView = self.webView as? WKWebView {
-            webView.evaluateJavaScript(js, completionHandler: nil)
+            let keyboardHeight = getKeyboardHeight()
+            let toolbarHeight = doneToolbar.frame.height
+            let webViewBottom = webView.frame.height
+            let toolbarY = webViewBottom - keyboardHeight - toolbarHeight
+            
+            doneToolbar.frame = CGRect(x: 0, y: toolbarY, width: webView.frame.width, height: toolbarHeight)
         }
+    }
+
+    // 獲取鍵盤的高度（此處應根據需要實現）
+    func getKeyboardHeight() -> CGFloat {
+        // 這裡返回一個固定值，根據實際情況修改
+        return 250
     }
 }
