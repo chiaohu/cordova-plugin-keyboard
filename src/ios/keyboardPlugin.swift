@@ -1,5 +1,6 @@
 import Foundation
 import UIKit
+import WebKit // 確保導入 WebKit 以使用 WKWebView
 
 @objc(KeyboardPlugin) class KeyboardPlugin: CDVPlugin, UITextFieldDelegate {
     
@@ -88,8 +89,14 @@ import UIKit
 
     // 更新 WebView 中的 HTML 輸入框
     func updateWebViewInputField(text: String) {
-        let js = "document.activeElement.value = '\(text)';"
-        self.webView?.evaluateJavaScript(js, completionHandler: nil)
+        if let webView = self.webView as? WKWebView {
+            let js = "document.activeElement.value = '\(text)';"
+            webView.evaluateJavaScript(js) { _, error in
+                if let error = error {
+                    print("Error evaluating JavaScript: \(error.localizedDescription)")
+                }
+            }
+        }
     }
 
     // 初始化插件時設置監聽器
