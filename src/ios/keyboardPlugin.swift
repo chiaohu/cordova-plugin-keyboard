@@ -1,5 +1,4 @@
 import Foundation
-import Cordova
 import UIKit
 
 @objc(KeyboardPlugin) class KeyboardPlugin: CDVPlugin {
