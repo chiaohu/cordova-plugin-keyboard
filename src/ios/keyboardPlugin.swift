@@ -1,7 +1,7 @@
 import Foundation
 import UIKit
 
-@objc(KeyboardPlugin) class KeyboardPlugin: CDVPlugin {
+@objc(KeyboardPlugin) class KeyboardPlugin: CDVPlugin, UITextFieldDelegate {
     
     // 定義透明的 UITextField
     var transparentTextField: UITextField?
@@ -27,6 +27,7 @@ import UIKit
         transparentTextField?.textColor = UIColor.clear
         transparentTextField?.tintColor = UIColor.clear
         transparentTextField?.keyboardType = .numberPad
+        transparentTextField?.delegate = self // 設置代理
         transparentTextField?.inputAccessoryView = createToolbar() // 設置自定義工具欄
         
         // 將透明的 UITextField 添加到 WebView 的上層
@@ -54,10 +55,11 @@ import UIKit
     }
 
     @objc func minusButtonAction() {
-        // 確保當前有輸入框處於焦點狀態
+        // 在透明的 UITextField 中插入 "-"
         if let textField = transparentTextField {
             let currentText = textField.text ?? ""
             textField.text = currentText + "-"
+            updateWebViewInputField(text: textField.text!)
         }
     }
 
@@ -73,6 +75,21 @@ import UIKit
             textField.removeFromSuperview()
             transparentTextField = nil
         }
+    }
+
+    // 當透明的 UITextField 輸入變化時調用此方法
+    func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
+        let currentText = textField.text ?? ""
+        let updatedText = (currentText as NSString).replacingCharacters(in: range, with: string)
+        
+        updateWebViewInputField(text: updatedText)
+        return true
+    }
+
+    // 更新 WebView 中的 HTML 輸入框
+    func updateWebViewInputField(text: String) {
+        let js = "document.activeElement.value = '\(text)';"
+        self.webView?.evaluateJavaScript(js, completionHandler: nil)
     }
 
     // 初始化插件時設置監聽器
