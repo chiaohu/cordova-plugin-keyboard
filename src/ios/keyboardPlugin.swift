@@ -4,21 +4,33 @@ import UIKit
 
 @objc(KeyboardPlugin) class KeyboardPlugin: CDVPlugin {
     
-    // 定義變量來存儲輸入框的引用
-    var currentInputField: UITextField?
+    // 定義透明的 UITextField
+    var transparentTextField: UITextField?
 
     @objc(addMinusButtonToKeyboard:)
     func addMinusButtonToKeyboard(command: CDVInvokedUrlCommand) {
-        // 為當前焦點輸入框設置自定義鍵盤
-        addDoneButtonOnKeyboard()
+        // 創建透明的 UITextField
+        if transparentTextField == nil {
+            transparentTextField = UITextField(frame: CGRect(x: 0, y: 0, width: self.webView!.frame.width, height: 40))
+            transparentTextField?.backgroundColor = UIColor.clear
+            transparentTextField?.textColor = UIColor.clear
+            transparentTextField?.tintColor = UIColor.clear
+            transparentTextField?.keyboardType = .numberPad
+            transparentTextField?.inputAccessoryView = createToolbar() // 設置自定義工具欄
+            
+            // 將透明的 UITextField 添加到 WebView 的上層
+            self.webView?.addSubview(transparentTextField!)
+        }
+        
+        // 將焦點設置到透明的 UITextField
+        transparentTextField?.becomeFirstResponder()
         
         let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: "Keyboard setup completed")
         self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
     }
 
-    // 設置鍵盤上的自定義按鈕
-    func addDoneButtonOnKeyboard() {
-        // 創建自定義工具欄
+    // 創建工具欄
+    func createToolbar() -> UIToolbar {
         let doneToolbar: UIToolbar = UIToolbar(frame: CGRect(x: 0, y: 0, width: 320, height: 50))
         doneToolbar.barStyle = UIBarStyle.default
         
@@ -33,53 +45,20 @@ import UIKit
         
         doneToolbar.items = items
         doneToolbar.sizeToFit()
-
-        // 將工具欄設置為當前輸入框的輔助視圖
-        if let textField = currentInputField {
-            textField.inputAccessoryView = doneToolbar
-        }
+        
+        return doneToolbar
     }
 
     @objc func minusButtonAction() {
-        // 確保當前有輸入框處於焦點狀態
-        if let textField = currentInputField {
+        if let textField = transparentTextField {
             let currentText = textField.text ?? ""
             textField.text = currentText + "-"
         }
     }
 
     @objc func doneButtonAction() {
-        // 收起鍵盤
-        if let textField = currentInputField {
+        if let textField = transparentTextField {
             textField.resignFirstResponder()
         }
-    }
-
-    // 監聽輸入框聚焦事件並設置鍵盤
-    override func pluginInitialize() {
-        NotificationCenter.default.addObserver(self, selector: #selector(self.keyboardWillShow(notification:)), name: UIResponder.keyboardWillShowNotification, object: nil)
-    }
-
-    @objc func keyboardWillShow(notification: Notification) {
-        // 檢查當前焦點的元素是否為輸入框
-        if let activeField = self.webView?.findFirstResponder() as? UITextField {
-            self.currentInputField = activeField
-            self.addDoneButtonOnKeyboard() // 為當前輸入框添加自定義工具欄
-        }
-    }
-}
-
-// 擴展 WKWebView 來查找當前的第一響應者
-extension UIView {
-    func findFirstResponder() -> UIView? {
-        if self.isFirstResponder {
-            return self
-        }
-        for subView in self.subviews {
-            if let firstResponder = subView.findFirstResponder() {
-                return firstResponder
-            }
-        }
-        return nil
     }
 }
