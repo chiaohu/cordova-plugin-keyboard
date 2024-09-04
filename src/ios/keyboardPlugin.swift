@@ -122,18 +122,18 @@ import WebKit // 確保導入 WebKit 以使用 WKWebView
         NotificationCenter.default.addObserver(self, selector: #selector(self.keyboardWillHide(notification:)), name: UIResponder.keyboardWillHideNotification, object: nil)
     }
 
-    @objc func keyboardWillShow(notification: Notification) {
+    @objc func keyboardWillShow(notification: NSNotification) {
         // 調整容器視圖的位置，以避免被鍵盤遮擋
-        adjustKeyboardContainerPosition()
+        adjustKeyboardContainerPosition(notification: notification)
     }
 
-    @objc func keyboardWillHide(notification: Notification) {
+    @objc func keyboardWillHide(notification: NSNotification) {
         // 當鍵盤隱藏時，也隱藏透明的 UITextField 和容器視圖
         hideKeyboardContainerView()
     }
 
     // 調整容器視圖的位置
-    func adjustKeyboardContainerPosition() {
+    func adjustKeyboardContainerPosition(notification: NSNotification) {
         if let keyboardFrame = (notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue)?.cgRectValue {
             // 將容器視圖放置在鍵盤上方
             let newY = self.webView!.frame.height - keyboardFrame.height - 40
