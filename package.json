@@ -1,0 +1,20 @@
+{
+    "name": "cordova-plugin-keyboard",
+    "version": "1.0.0",
+    "description": "Cordova plugin for custom keyboard with a '-' button on iOS",
+    "cordova": {
+      "id": "cordova-plugin-keyboard",
+      "platforms": [
+        "ios"
+      ]
+    },
+    "keywords": [
+      "cordova",
+      "plugin",
+      "ios",
+      "keyboard",
+      "swift"
+    ],
+    "author": "",
+    "license": "MIT"
+  }

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
+        id="cordova-plugin-keyboard"
+        version="1.0.0">
+    <name>KeyboardPlugin</name>
+    <description>Cordova Plugin to demonstrate Swift integration with custom keyboard button</description>
+    <license>MIT</license>
+    <keywords>cordova,plugin,swift,keyboard</keywords>
+    <platform name="ios">
+        <source-file src="src/ios/KeyboardPlugin.swift" />
+        <config-file parent="/*" target="config.xml">
+            <feature name="KeyboardPlugin">
+                <param name="ios-package" value="KeyboardPlugin" />
+            </feature>
+        </config-file>
+    </platform>
+    <js-module src="www/keyboard-plugin.js" name="KeyboardPlugin">
+        <clobbers target="cordova.plugins.KeyboardPlugin" />
+    </js-module>
+</plugin>
