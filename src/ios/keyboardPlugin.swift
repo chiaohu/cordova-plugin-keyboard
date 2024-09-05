@@ -60,7 +60,7 @@ import WebKit // 確保導入 WebKit 以使用 WKWebView
         if let textField = transparentTextField {
             let currentText = textField.text ?? ""
             textField.text = currentText + "-"
-            updateWebViewInputField(text: textField.text!)
+            updateWebViewDiv(text: textField.text!)
         }
     }
 
@@ -87,15 +87,14 @@ import WebKit // 確保導入 WebKit 以使用 WKWebView
         return true
     }
 
-    // 更新 WebView 中的 HTML 輸入框
-    func updateWebViewInputField(text: String) {
+    // 更新 WebView 中的 HTML div
+    func updateWebViewDiv(text: String) {
         if let webView = self.webView as? WKWebView {
-            // 使用 JavaScript 設置 HTML 輸入框的值並保持焦點
+            // 使用 JavaScript 設置 HTML div 的內容
             let js = """
-            var activeElement = document.activeElement;
-            if (activeElement && activeElement.tagName === 'INPUT') {
-                activeElement.value = '\(text)';
-                activeElement.focus();
+            var divElement = document.getElementById('myDiv');
+            if (divElement) {
+                divElement.innerText = '\(text)';
             }
             """
             webView.evaluateJavaScript(js) { _, error in
