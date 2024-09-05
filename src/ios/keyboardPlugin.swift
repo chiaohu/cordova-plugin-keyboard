@@ -1,27 +1,55 @@
 import Foundation
+import WebKit
 
 @objc(KeyboardPlugin) class KeyboardPlugin: CDVPlugin {
     
-    var doneToolbar: UIToolbar!
-    
+    var doneToolbar: String!
+
     override func pluginInitialize() {
         super.pluginInitialize()
         setupToolbar()
     }
 
+    // Define the toolbar as HTML string
     func setupToolbar() {
-        doneToolbar = UIToolbar(frame: CGRect(x: 0, y: 0, width: self.webView!.frame.width, height: 50))
-        doneToolbar.barStyle = .default
-
-        let flexSpace = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
-        let minusBtn = UIBarButtonItem(title: "-", style: .plain, target: self, action: #selector(minusButtonAction))
-        let doneBtn = UIBarButtonItem(title: "Done", style: .done, target: self, action: #selector(doneButtonAction))
-
-        doneToolbar.items = [minusBtn, flexSpace, doneBtn]
-        doneToolbar.sizeToFit()
+        doneToolbar = """
+        <div id="custom-toolbar" style="position: fixed; bottom: 0; width: 100%; background-color: #fff; border-top: 1px solid #ddd; text-align: center;">
+            <button id="minusBtn">-</button>
+            <button id="doneBtn">Done</button>
+        </div>
+        """
     }
 
-    @objc func minusButtonAction() {
+    @objc(addCustomToolbar:)
+    func addCustomToolbar(command: CDVInvokedUrlCommand) {
+        if let webView = self.webView as? WKWebView {
+            let js = """
+            (function() {
+                var toolbarHTML = \(self.doneToolbar);
+                var existingToolbar = document.getElementById('custom-toolbar');
+                if (!existingToolbar) {
+                    document.body.insertAdjacentHTML('beforeend', toolbarHTML);
+                    document.getElementById('minusBtn').addEventListener('click', function() {
+                        cordova.exec(null, null, 'KeyboardPlugin', 'minusButtonAction', []);
+                    });
+                    document.getElementById('doneBtn').addEventListener('click', function() {
+                        cordova.exec(null, null, 'KeyboardPlugin', 'doneButtonAction', []);
+                    });
+                }
+            })();
+            """
+            webView.evaluateJavaScript(js) { _, error in
+                if let error = error {
+                    print("Error evaluating JavaScript: \(error.localizedDescription)")
+                }
+            }
+        }
+        let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: "Toolbar added")
+        self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
+    }
+
+    @objc(minusButtonAction:)
+    func minusButtonAction(command: CDVInvokedUrlCommand) {
         if let webView = self.webView as? WKWebView {
             let js = """
             (function() {
@@ -41,25 +69,27 @@ import Foundation
                 }
             }
         }
+        let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: "Minus button pressed")
+        self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
     }
 
-    @objc func doneButtonAction() {
+    @objc(doneButtonAction:)
+    func doneButtonAction(command: CDVInvokedUrlCommand) {
         if let webView = self.webView as? WKWebView {
-            let js = "document.activeElement.blur();"
+            let js = """
+            document.activeElement.blur();
+            var toolbar = document.getElementById('custom-toolbar');
+            if (toolbar) {
+                toolbar.remove();
+            }
+            """
             webView.evaluateJavaScript(js) { _, error in
                 if let error = error {
                     print("Error evaluating JavaScript: \(error.localizedDescription)")
                 }
             }
         }
-    }
-
-    @objc(addCustomToolbar:)
-    func addCustomToolbar(command: CDVInvokedUrlCommand) {
-        if let webView = self.webView as? WKWebView {
-            webView.inputAccessoryView = doneToolbar
-        }
-        let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: "Toolbar added")
+        let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: "Done button pressed")
         self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
     }
 }
