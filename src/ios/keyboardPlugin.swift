@@ -1,66 +1,27 @@
 import Foundation
-import Cordova
 
-@objc(MyPlugin) class MyPlugin: CDVPlugin {
+@objc(KeyboardPlugin) class KeyboardPlugin: CDVPlugin {
     
     var doneToolbar: UIToolbar!
-
-    // 初始化時設置工具欄
+    
     override func pluginInitialize() {
         super.pluginInitialize()
         setupToolbar()
     }
 
-    @objc(addMinusButtonToKeyboard:)
-    func addMinusButtonToKeyboard(command: CDVInvokedUrlCommand) {
-        // 設置工具欄
-        setupToolbar()
-        
-        let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: "Keyboard setup completed")
-        self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
-    }
-
-    @objc(minusButtonAction:)
-    func minusButtonAction(command: CDVInvokedUrlCommand) {
-        // 處理 "-" 按鈕點擊事件
-        handleMinusButtonAction()
-        
-        let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: "Minus button pressed")
-        self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
-    }
-
-    @objc(doneButtonAction:)
-    func doneButtonAction(command: CDVInvokedUrlCommand) {
-        // 處理 "完成" 按鈕點擊事件
-        handleDoneButtonAction()
-        
-        let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: "Done button pressed")
-        self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
-    }
-
-    // 設置工具欄
     func setupToolbar() {
-        // 初始化工具欄
-        doneToolbar = UIToolbar()
-        doneToolbar.sizeToFit()
-        
-        // 設置按鈕
-        let minusBtn = UIBarButtonItem(title: "-", style: .plain, target: self, action: #selector(minusButtonAction))
-        let doneBtn = UIBarButtonItem(title: "完成", style: .done, target: self, action: #selector(doneButtonAction))
+        doneToolbar = UIToolbar(frame: CGRect(x: 0, y: 0, width: self.webView!.frame.width, height: 50))
+        doneToolbar.barStyle = .default
+
         let flexSpace = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
+        let minusBtn = UIBarButtonItem(title: "-", style: .plain, target: self, action: #selector(minusButtonAction))
+        let doneBtn = UIBarButtonItem(title: "Done", style: .done, target: self, action: #selector(doneButtonAction))
 
         doneToolbar.items = [minusBtn, flexSpace, doneBtn]
-        
-        // 添加工具欄到鍵盤
-        if let webView = self.webView as? WKWebView {
-            if let inputElement = webView.evaluateJavaScript("document.activeElement", completionHandler: nil) as? HTMLElement {
-                inputElement.inputAccessoryView = doneToolbar
-            }
-        }
+        doneToolbar.sizeToFit()
     }
 
-    @objc func handleMinusButtonAction() {
-        // 在當前活動的輸入框中插入 "-"
+    @objc func minusButtonAction() {
         if let webView = self.webView as? WKWebView {
             let js = """
             (function() {
@@ -82,8 +43,7 @@ import Cordova
         }
     }
 
-    @objc func handleDoneButtonAction() {
-        // 收起鍵盤
+    @objc func doneButtonAction() {
         if let webView = self.webView as? WKWebView {
             let js = "document.activeElement.blur();"
             webView.evaluateJavaScript(js) { _, error in
@@ -92,5 +52,14 @@ import Cordova
                 }
             }
         }
+    }
+
+    @objc(addCustomToolbar:)
+    func addCustomToolbar(command: CDVInvokedUrlCommand) {
+        if let webView = self.webView as? WKWebView {
+            webView.inputAccessoryView = doneToolbar
+        }
+        let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: "Toolbar added")
+        self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
     }
 }
