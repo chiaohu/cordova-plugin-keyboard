@@ -93,9 +93,8 @@ import WebKit // 確保導入 WebKit 以使用 WKWebView
             let escapedText = text.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
             let js = """
             try {
-                var divElement = document.getElementById('myDiv');
-                if (divElement) {
-                    divElement.innerText = decodeURIComponent('\(escapedText)');
+                if (decodeURIComponent('\(escapedText)')) {
+                    window.cordova.plugins.KeyboardPlugin.text = decodeURIComponent('\(escapedText)');
                     console.log('Div updated with text: ' + decodeURIComponent('\(escapedText)'));
                 } else {
                     console.log('Div element not found');
