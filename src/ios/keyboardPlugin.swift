@@ -83,7 +83,7 @@ import WebKit // 確保導入 WebKit 以使用 WKWebView
         let currentText = textField.text ?? ""
         let updatedText = (currentText as NSString).replacingCharacters(in: range, with: string)
         
-        updateWebViewInputField(text: updatedText)
+        updateWebViewDiv(text: updatedText)
         return true
     }
 
