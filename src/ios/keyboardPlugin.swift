@@ -90,16 +90,25 @@ import WebKit // 確保導入 WebKit 以使用 WKWebView
     // 更新 WebView 中的 HTML div
     func updateWebViewDiv(text: String) {
         if let webView = self.webView as? WKWebView {
-            // 使用 JavaScript 設置 HTML div 的內容
-            let js = """
-            var divElement = document.getElementById('myDiv');
-            if (divElement) {
-                divElement.innerText = '\(text)';
-            }
-            """
-            webView.evaluateJavaScript(js) { _, error in
-                if let error = error {
-                    print("Error evaluating JavaScript: \(error.localizedDescription)")
+            webView.evaluateJavaScript("document.readyState") { (result, error) in
+                if let state = result as? String, state == "complete" {
+                    let escapedText = text.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+                    let js = """
+                    var divElement = document.getElementById('myDiv');
+                    print(var)
+                    if (divElement) {
+                        divElement.innerText = decodeURIComponent('\(escapedText)');
+                    } else {
+                        console.log('Div element not found');
+                    }
+                    """
+                    webView.evaluateJavaScript(js) { _, error in
+                        if let error = error {
+                            print("Error evaluating JavaScript: \(error.localizedDescription)")
+                        }
+                    }
+                } else {
+                    print("WebView not yet fully loaded")
                 }
             }
         }
