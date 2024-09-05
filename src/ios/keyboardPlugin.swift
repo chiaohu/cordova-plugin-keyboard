@@ -94,7 +94,9 @@ import WebKit // 確保導入 WebKit 以使用 WKWebView
             let js = """
             try {
                 if (decodeURIComponent('\(escapedText)')) {
-                    window.cordova.plugins.KeyboardPlugin.text = decodeURIComponent('\(escapedText)');
+                    var divElement = document.getElementById('myDiv');
+                    divElement.innerText =  decodeURIComponent('\(escapedText)');
+                    // window.cordova.plugins.KeyboardPlugin.text = decodeURIComponent('\(escapedText)');
                     console.log('Div updated with text: ' + decodeURIComponent('\(escapedText)'));
                 } else {
                     console.log('Div element not found');
