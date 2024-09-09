@@ -75,14 +75,22 @@ import WebKit
 
     @objc func keyboardWillShow(notification: Notification) {
         if let webView = self.webView as? WKWebView {
+            // 查找當前的第一響應者
             let js = """
             var activeElement = document.activeElement;
             if (activeElement && activeElement.tagName === 'INPUT') {
-                // 將工具欄添加到數字鍵盤上
                 window.webkit.messageHandlers.minusButtonHandler.postMessage(null);
             }
             """
             webView.evaluateJavaScript(js)
+            
+            // 查找目前的輸入框並設置工具欄
+            for window in UIApplication.shared.windows {
+                if let view = window.findFirstResponder() as? UITextField {
+                    view.inputAccessoryView = createToolbar() // 添加工具欄
+                    view.reloadInputViews() // 刷新輸入視圖以顯示工具欄
+                }
+            }
         }
     }
 
