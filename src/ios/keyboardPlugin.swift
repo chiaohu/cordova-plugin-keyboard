@@ -1,56 +1,235 @@
+import Foundation
+
 import UIKit
 
-@objc(KeyboardPlugin) class KeyboardPlugin: CDVPlugin {
+import WebKit // 確保導入 WebKit 以使用 WKWebView
 
-    @objc(addDoneButtonOnKeyboard:)
-    func addDoneButtonOnKeyboard(command: CDVInvokedUrlCommand) {
 
-        let emailTxt = UITextField()
-        let numTxt = UITextField()
+
+@objc(KeyboardPlugin) class KeyboardPlugin: CDVPlugin, UITextFieldDelegate {
+
+    
+
+    // 定義透明的 UITextField
+
+    var transparentTextField: UITextField?
+
+
+
+    @objc(addMinusButtonToKeyboard:)
+
+    func addMinusButtonToKeyboard(command: CDVInvokedUrlCommand) {
+
+        // 創建透明的 UITextField
+
+        if transparentTextField == nil {
+
+            setupTransparentTextField()
+
+        }
+
         
-        // 設定 email 輸入欄位
-        emailTxt.keyboardType = .emailAddress
-        emailTxt.clearButtonMode = .whileEditing
 
-        // 設定數字輸入欄位
-        numTxt.keyboardType = .numberPad
+        // 將焦點設置到透明的 UITextField
 
-        // 加入自訂的工具列到鍵盤
-        self.addToolbarToTextField(emailTxt)
+        transparentTextField?.becomeFirstResponder()
+
         
-        // 回傳成功訊息給 JavaScript
-        let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: "完成按鈕已新增")
+
+        let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: "Keyboard setup completed")
+
         self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
+
     }
 
-    func addToolbarToTextField(_ textField: UITextField) {
+
+
+    // 初始化透明的 UITextField 並設置工具欄
+
+    func setupTransparentTextField() {
+
+        transparentTextField = UITextField(frame: CGRect(x: 0, y: 0, width: self.webView!.frame.width, height: 40))
+
+        transparentTextField?.backgroundColor = UIColor.clear
+
+        transparentTextField?.textColor = UIColor.clear
+
+        transparentTextField?.tintColor = UIColor.clear
+
+        transparentTextField?.keyboardType = .numberPad
+
+        transparentTextField?.delegate = self // 設置代理
+
+        transparentTextField?.inputAccessoryView = createToolbar() // 設置自定義工具欄
+
+        
+
+        // 將透明的 UITextField 添加到 WebView 的上層
+
+        self.webView?.addSubview(transparentTextField!)
+
+    }
+
+
+
+    // 創建工具欄
+
+    func createToolbar() -> UIToolbar {
 
         let doneToolbar: UIToolbar = UIToolbar(frame: CGRect(x: 0, y: 0, width: 320, height: 50))
+
         doneToolbar.barStyle = UIBarStyle.default
+
         
+
         let flexSpace = UIBarButtonItem(barButtonSystemItem: UIBarButtonItem.SystemItem.flexibleSpace, target: nil, action: nil)
-        let doneBtn = UIBarButtonItem(title: "確定", style: UIBarButtonItem.Style.done, target: self, action: #selector(doneButtonAction))
-        let gogoBtn = UIBarButtonItem(image: UIImage(named: "tab-album"), style: UIBarButtonItem.Style.plain, target: self, action: #selector(gogoButtonAction))
+
+        let minusBtn: UIBarButtonItem = UIBarButtonItem(title: "-", style: UIBarButtonItem.Style.plain, target: self, action: #selector(minusButtonAction))
+
+        let doneBtn: UIBarButtonItem = UIBarButtonItem(title: "確定", style: UIBarButtonItem.Style.done, target: self, action: #selector(doneButtonAction))
+
         
+
         var items = [UIBarButtonItem]()
-        items.append(gogoBtn)
+
+        items.append(minusBtn) // 添加 "-" 按鈕
+
         items.append(flexSpace)
-        items.append(doneBtn)
+
+        items.append(doneBtn)  // 添加 "確定" 按鈕
+
         
+
         doneToolbar.items = items
+
         doneToolbar.sizeToFit()
+
         
-        // 將工具列加到鍵盤輸入欄位上
-        textField.inputAccessoryView = doneToolbar
+
+        return doneToolbar
+
     }
 
-    @objc func gogoButtonAction() {
-        print("gogo.....")
-        // 執行一些操作
+
+
+    @objc func minusButtonAction() {
+
+        // 在透明的 UITextField 中插入 "-"
+
+        if let textField = transparentTextField {
+
+            let currentText = textField.text ?? ""
+
+            textField.text = currentText + "-"
+
+            updateWebViewInputField(text: textField.text!)
+
+        }
+
     }
+
+
 
     @objc func doneButtonAction() {
-        // 處理 "確定" 按鈕操作
-        print("done.....")
+
+        // 收起鍵盤並隱藏透明的 UITextField
+
+        hideTransparentTextField()
+
     }
+
+
+
+    // 隱藏並移除透明的 UITextField
+
+    func hideTransparentTextField() {
+
+        if let textField = transparentTextField {
+
+            textField.resignFirstResponder()
+
+            textField.removeFromSuperview()
+
+            transparentTextField = nil
+
+        }
+
+    }
+
+
+
+    // 當透明的 UITextField 輸入變化時調用此方法
+
+    func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
+
+        let currentText = textField.text ?? ""
+
+        let updatedText = (currentText as NSString).replacingCharacters(in: range, with: string)
+
+        
+
+        updateWebViewInputField(text: updatedText)
+
+        return true
+
+    }
+
+
+
+    // 更新 WebView 中的 HTML 輸入框
+
+    func updateWebViewInputField(text: String) {
+
+        if let webView = self.webView as? WKWebView {
+
+            // 使用 JavaScript 設置 HTML 輸入框的值並保持焦點
+
+            let js = """
+
+            var activeElement = document.activeElement;
+
+            if (activeElement && activeElement.tagName === 'INPUT') {
+
+                activeElement.value = '\(text)';
+
+                activeElement.focus();
+
+            }
+
+            """
+
+            webView.evaluateJavaScript(js) { _, error in
+
+                if let error = error {
+
+                    print("Error evaluating JavaScript: \(error.localizedDescription)")
+
+                }
+
+            }
+
+        }
+
+    }
+
+
+
+    // 初始化插件時設置監聽器
+
+    override func pluginInitialize() {
+
+        NotificationCenter.default.addObserver(self, selector: #selector(self.keyboardWillHide(notification:)), name: UIResponder.keyboardWillHideNotification, object: nil)
+
+    }
+
+
+
+    @objc func keyboardWillHide(notification: Notification) {
+
+        // 當鍵盤隱藏時，也隱藏透明的 UITextField
+
+        hideTransparentTextField()
+
+    }
+
 }
