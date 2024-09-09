@@ -1,75 +1,56 @@
 import UIKit
 
-@objc(KeyboardPlugin) class KeyboardPlugin: CDVPlugin {
-    
-    @objc(addMinusButton:)
-    func addMinusButton(command: CDVInvokedUrlCommand) {
-        DispatchQueue.main.async {
-            // 確保 viewController 存在
-            if let viewController = self.viewController {
-                // 搜尋 WKWebView 中的 input 元素
-                if let webView = viewController.view.subviews.first(where: { $0 is WKWebView }) as? WKWebView {
-                    self.addMinusButtonToWebView(webView: webView)
-                    let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: "Minus button added")
-                    self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
-                } else {
-                    let pluginResult = CDVPluginResult(status: CDVCommandStatus_ERROR, messageAs: "WKWebView not found")
-                    self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
-                }
-            }
-        }
+@objc(CustomKeyboard) class CustomKeyboard: CDVPlugin {
+
+    @objc(addDoneButtonOnKeyboard:)
+    func addDoneButtonOnKeyboard(command: CDVInvokedUrlCommand) {
+
+        let emailTxt = UITextField()
+        let numTxt = UITextField()
+        
+        // 設定 email 輸入欄位
+        emailTxt.keyboardType = .emailAddress
+        emailTxt.clearButtonMode = .whileEditing
+
+        // 設定數字輸入欄位
+        numTxt.keyboardType = .numberPad
+
+        // 加入自訂的工具列到鍵盤
+        self.addToolbarToTextField(emailTxt)
+        
+        // 回傳成功訊息給 JavaScript
+        let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: "完成按鈕已新增")
+        self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
     }
 
-    // 添加 Minus 按鈕到 WKWebView 的 input 元素的鍵盤
-    func addMinusButtonToWebView(webView: WKWebView) {
-        // 建立 UIToolbar 作為鍵盤上方的工具列
-        let toolbar = UIToolbar()
-        toolbar.sizeToFit()
+    func addToolbarToTextField(_ textField: UITextField) {
 
-        // 建立 minus 按鈕
-        let minusButton = UIBarButtonItem(title: "-", style: .plain, target: self, action: #selector(insertMinus))
-
-        // 建立完成按鈕
-        let doneButton = UIBarButtonItem(barButtonSystemItem: .done, target: self, action: #selector(donePressed))
-
-        // 建立彈性空間讓按鈕分開
-        let flexibleSpace = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
-
-        // 將按鈕添加到工具列上
-        toolbar.setItems([minusButton, flexibleSpace, doneButton], animated: false)
-
-        // 為 WKWebView 的鍵盤設置 inputAccessoryView
-        for subview in webView.scrollView.subviews {
-            if let textField = subview as? UITextField {
-                textField.inputAccessoryView = toolbar
-            }
-        }
+        let doneToolbar: UIToolbar = UIToolbar(frame: CGRect(x: 0, y: 0, width: 320, height: 50))
+        doneToolbar.barStyle = UIBarStyle.default
+        
+        let flexSpace = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.flexibleSpace, target: nil, action: nil)
+        let doneBtn = UIBarButtonItem(title: "確定", style: UIBarButtonItemStyle.done, target: self, action: #selector(doneButtonAction))
+        let gogoBtn = UIBarButtonItem(image: UIImage(named: "tab-album"), style: UIBarButtonItemStyle.plain, target: self, action: #selector(gogoButtonAction))
+        
+        var items = [UIBarButtonItem]()
+        items.append(gogoBtn)
+        items.append(flexSpace)
+        items.append(doneBtn)
+        
+        doneToolbar.items = items
+        doneToolbar.sizeToFit()
+        
+        // 將工具列加到鍵盤輸入欄位上
+        textField.inputAccessoryView = doneToolbar
     }
 
-    // 按下 minus 按鈕時的行為
-    @objc func insertMinus() {
-        if let firstResponder = UIResponder.currentFirstResponder as? UITextField {
-            firstResponder.insertText("-")
-        }
+    @objc func gogoButtonAction() {
+        print("gogo.....")
+        // 執行一些操作
     }
 
-    // 按下完成按鈕時的行為
-    @objc func donePressed() {
-        self.viewController.view.endEditing(true)
-    }
-}
-
-// 擴展 UIResponder 來找到當前的 first responder
-extension UIResponder {
-    private weak static var _currentFirstResponder: UIResponder? = nil
-
-    public static var currentFirstResponder: UIResponder? {
-        _currentFirstResponder = nil
-        UIApplication.shared.sendAction(#selector(findFirstResponder(_:)), to: nil, from: nil, for: nil)
-        return _currentFirstResponder
-    }
-
-    @objc private func findFirstResponder(_ sender: AnyObject) {
-        UIResponder._currentFirstResponder = self
+    @objc func doneButtonAction() {
+        // 處理 "確定" 按鈕操作
+        print("done.....")
     }
 }
