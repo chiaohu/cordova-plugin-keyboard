@@ -7,12 +7,17 @@ import WebKit
     // 監聽 WKWebView 中的 JavaScript 消息
     @objc(addMinusButtonToKeyboard:)
     func addMinusButtonToKeyboard(command: CDVInvokedUrlCommand) {
-        // 註冊與 JavaScript 交互的處理
+        // 確保 WKWebView 存在
         if let webView = self.webView as? WKWebView {
             let contentController = webView.configuration.userContentController
+            
+            // 移除已存在的消息處理器，避免重複添加
+            contentController.removeScriptMessageHandler(forName: "minusButtonHandler")
+            
+            // 添加新的消息處理器
             contentController.add(self, name: "minusButtonHandler")
         }
-
+    
         let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: "Keyboard setup completed")
         self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
     }
