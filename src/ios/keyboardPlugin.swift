@@ -75,11 +75,14 @@ import WebKit
 
     @objc func keyboardWillShow(notification: Notification) {
         if let webView = self.webView as? WKWebView {
-            // 查找當前的第一響應者 (輸入框)
+            // 查找並強制聚焦輸入框
             let js = """
             var activeElement = document.activeElement;
             if (activeElement && activeElement.tagName === 'INPUT') {
+                activeElement.focus();
                 window.webkit.messageHandlers.minusButtonHandler.postMessage(null);
+            } else {
+                document.getElementById('inputField').focus(); // 強制焦點到某個輸入框
             }
             """
             webView.evaluateJavaScript(js)
