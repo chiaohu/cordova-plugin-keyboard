@@ -87,8 +87,11 @@ import WebKit
             // 查找目前的輸入框並設置工具欄
             for window in UIApplication.shared.windows {
                 if let view = window.findFirstResponder() as? UITextField {
+                    print("Found focused input field: \(view)") // 調試輸出確認找到輸入框
                     view.inputAccessoryView = createToolbar() // 添加工具欄
                     view.reloadInputViews() // 刷新輸入視圖以顯示工具欄
+                } else {
+                    print("No focused input field found.") // 調試輸出未找到輸入框
                 }
             }
         }
