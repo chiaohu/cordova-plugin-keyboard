@@ -86,8 +86,6 @@ import WebKit
             }
             """
             webView.evaluateJavaScript(js)
-
-            print(activeElement,document.getElementById('myInput'))
             
             // 查找目前的輸入框並設置工具欄
             for window in UIApplication.shared.windows {
