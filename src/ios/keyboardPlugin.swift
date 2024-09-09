@@ -6,6 +6,7 @@ import UIKit
     func addMinusButton(command: CDVInvokedUrlCommand) {
         DispatchQueue.main.async {
             if let viewController = self.viewController {
+                print("viewController is not nil") // 確認 viewController 存在
                 if let textField = self.findTextFieldIn(viewController.view) {
                     self.addMinusButtonToTextField(textField: textField)
                     let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: "Minus button added")
