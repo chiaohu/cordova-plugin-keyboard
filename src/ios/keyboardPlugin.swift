@@ -3,21 +3,16 @@ import UIKit
 import WebKit
 
 @objc(KeyboardPlugin) class KeyboardPlugin: CDVPlugin, WKScriptMessageHandler {
-
+    
     // 監聽 WKWebView 中的 JavaScript 消息
     @objc(addMinusButtonToKeyboard:)
     func addMinusButtonToKeyboard(command: CDVInvokedUrlCommand) {
-        // 確保 WKWebView 存在
+        // 註冊與 JavaScript 交互的處理
         if let webView = self.webView as? WKWebView {
             let contentController = webView.configuration.userContentController
-            
-            // 移除已存在的消息處理器，避免重複添加
-            contentController.removeScriptMessageHandler(forName: "minusButtonHandler")
-            
-            // 添加新的消息處理器
             contentController.add(self, name: "minusButtonHandler")
         }
-    
+
         let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: "Keyboard setup completed")
         self.commandDelegate.send(pluginResult, callbackId: command.callbackId)
     }
@@ -75,7 +70,7 @@ import WebKit
 
     @objc func keyboardWillShow(notification: Notification) {
         if let webView = self.webView as? WKWebView {
-            // 查找當前的第一響應者
+            // 查找當前的第一響應者 (輸入框)
             let js = """
             var activeElement = document.activeElement;
             if (activeElement && activeElement.tagName === 'INPUT') {
@@ -96,5 +91,20 @@ import WebKit
 
     @objc func keyboardWillHide(notification: Notification) {
         // 可以在此處處理鍵盤隱藏時的事件
+    }
+}
+
+// UIView 擴展來查找第一響應者
+extension UIView {
+    func findFirstResponder() -> UIResponder? {
+        if self.isFirstResponder {
+            return self
+        }
+        for subview in self.subviews {
+            if let firstResponder = subview.findFirstResponder() {
+                return firstResponder
+            }
+        }
+        return nil
     }
 }
