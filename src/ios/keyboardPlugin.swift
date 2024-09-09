@@ -28,9 +28,9 @@ import UIKit
         let doneToolbar: UIToolbar = UIToolbar(frame: CGRect(x: 0, y: 0, width: 320, height: 50))
         doneToolbar.barStyle = UIBarStyle.default
         
-        let flexSpace = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.flexibleSpace, target: nil, action: nil)
-        let doneBtn = UIBarButtonItem(title: "確定", style: UIBarButtonItemStyle.done, target: self, action: #selector(doneButtonAction))
-        let gogoBtn = UIBarButtonItem(image: UIImage(named: "tab-album"), style: UIBarButtonItemStyle.plain, target: self, action: #selector(gogoButtonAction))
+        let flexSpace = UIBarButtonItem(barButtonSystemItem: UIBarButtonItem.SystemItem.flexibleSpace, target: nil, action: nil)
+        let doneBtn = UIBarButtonItem(title: "確定", style: UIBarButtonItem.Style.done, target: self, action: #selector(doneButtonAction))
+        let gogoBtn = UIBarButtonItem(image: UIImage(named: "tab-album"), style: UIBarButtonItem.Style.plain, target: self, action: #selector(gogoButtonAction))
         
         var items = [UIBarButtonItem]()
         items.append(gogoBtn)
