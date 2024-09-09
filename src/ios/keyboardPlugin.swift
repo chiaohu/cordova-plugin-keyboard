@@ -22,11 +22,13 @@ import UIKit
     func findTextFieldIn(_ view: UIView) -> UITextField? {
         for subview in view.subviews {
             if let textField = subview as? UITextField {
+                print("Found UITextField: \(textField)")
                 return textField
             } else if let foundTextField = findTextFieldIn(subview) {
                 return foundTextField
             }
         }
+        print("No UITextField found in view: \(view)")
         return nil
     }
     
@@ -41,6 +43,8 @@ import UIKit
         toolbar.setItems([minusButton, flexibleSpace, doneButton], animated: false)
         textField.inputAccessoryView = toolbar
         textField.keyboardType = .numberPad
+
+        print("UIToolbar added to UITextField: \(textField)")
     }
     
     @objc func insertMinus() {
