@@ -1,6 +1,6 @@
 import UIKit
 
-@objc(CustomKeyboard) class CustomKeyboard: CDVPlugin {
+@objc(KeyboardPlugin) class KeyboardPlugin: CDVPlugin {
 
     @objc(addDoneButtonOnKeyboard:)
     func addDoneButtonOnKeyboard(command: CDVInvokedUrlCommand) {
