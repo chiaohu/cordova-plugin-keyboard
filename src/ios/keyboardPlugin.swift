@@ -75,30 +75,23 @@ import WebKit
 
     @objc func keyboardWillShow(notification: Notification) {
         if let webView = self.webView as? WKWebView {
-            // 查找並強制聚焦輸入框
             let js = """
             var activeElement = document.activeElement;
             if (activeElement && activeElement.tagName === 'INPUT') {
-                activeElement.focus();
                 window.webkit.messageHandlers.minusButtonHandler.postMessage(null);
             } else {
-                document.getElementById('myInput').focus(); // 強制焦點到某個輸入框
+                console.log("No input field is focused.");
             }
             """
-            webView.evaluateJavaScript(js)
-            
-            // 查找目前的輸入框並設置工具欄
-            for window in UIApplication.shared.windows {
-                if let view = window.findFirstResponder() as? UITextField {
-                    print("Found focused input field: \(view)") // 調試輸出確認找到輸入框
-                    view.inputAccessoryView = createToolbar() // 添加工具欄
-                    view.reloadInputViews() // 刷新輸入視圖以顯示工具欄
+            webView.evaluateJavaScript(js) { (result, error) in
+                if let error = error {
+                    print("JavaScript error: \(error.localizedDescription)")
                 } else {
-                    print("No focused input field found.") // 調試輸出未找到輸入框
+                    print("JavaScript executed successfully.")
                 }
             }
         }
-    }
+}
 
     @objc func keyboardWillHide(notification: Notification) {
         // 可以在此處處理鍵盤隱藏時的事件
