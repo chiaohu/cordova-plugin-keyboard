@@ -1,7 +1,9 @@
-document.addEventListener('deviceready', function() {
-    cordova.plugins.KeyboardMinus.addMinusButton(function() {
-        console.log('Minus button added to keyboard');
-    }, function(error) {
-        console.error('Error adding minus button: ', error);
-    });
-});
+var exec = require('cordova/exec');
+
+var KeyboardMinus = {
+    addMinusButton: function(successCallback, errorCallback) {
+        exec(successCallback, errorCallback, 'KeyboardMinus', 'addMinusButton', []);
+    }
+};
+
+module.exports = KeyboardMinus;
