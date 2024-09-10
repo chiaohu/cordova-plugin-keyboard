@@ -7,15 +7,8 @@
     <license>MIT</license>
     <keywords>cordova,plugin,swift,keyboard</keywords>
 
-    <!-- Swift support -->
-    <preference name="UseSwiftLanguageVersion" value="5" />
-    <preference name="SwiftVersion" value="5" />
-
     <platform name="ios">
-        <!-- Include the Swift source file -->
-        <source-file src="src/ios/KeyboardPlugin.swift" framework="true" />
-        
-        <!-- Add the plugin feature in config.xml -->
+        <source-file src="src/ios/KeyboardPlugin.swift" />
         <config-file parent="/*" target="config.xml">
             <feature name="KeyboardMinus">
                 <param name="ios-package" value="KeyboardPlugin" />
