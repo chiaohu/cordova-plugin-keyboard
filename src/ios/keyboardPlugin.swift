@@ -1,5 +1,4 @@
 import UIKit
-import WebKit
 
 @objc(KeyboardPlugin) class KeyboardPlugin: CDVPlugin {
 
@@ -16,8 +15,8 @@ import WebKit
 
         toolbar.setItems([flexibleSpace, minusButton], animated: false)
 
-        // Attach the toolbar to the input field in the web page
-        attachToolbarToInputField(toolbar)
+        // Attach the toolbar to the currently active input field
+        attachToolbarToActiveInput(toolbar)
 
         // Send a success callback to JavaScript
         let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK)
@@ -25,27 +24,40 @@ import WebKit
     }
 
     @objc func minusButtonTapped() {
-        // Inject a minus sign into the currently focused input in the WebView
-        if let webView = self.webView as? WKWebView {
-            webView.evaluateJavaScript("document.activeElement.value += '-';", completionHandler: nil)
+        // Inject a minus sign into the currently focused input field
+        if let activeTextField = getActiveTextField() {
+            activeTextField.text = (activeTextField.text ?? "") + "-"
         }
     }
 
-    private func attachToolbarToInputField(_ toolbar: UIToolbar) {
-        // Ensure webView is a WKWebView
-        if let webView = self.webView as? WKWebView {
-            // Use JavaScript to monitor the specific input field with id="myInput"
-            webView.evaluateJavaScript("""
-            var inputElement = document.getElementById('myInput');
-            if (inputElement) {
-                inputElement.addEventListener('focus', function() {
-                    // Call native code to add the toolbar when the input gets focus
-                    window.webkit.messageHandlers.cordova.postMessage('addToolbar');
-                });
-            } else {
-                console.log('Element with id "myInput" not found');
-            }
-            """, completionHandler: nil)
+    private func attachToolbarToActiveInput(_ toolbar: UIToolbar) {
+        // Get the currently active UITextField or UITextView
+        if let activeTextField = getActiveTextField(), activeTextField.isFirstResponder {
+            activeTextField.inputAccessoryView = toolbar
+            activeTextField.reloadInputViews()
+        } else {
+            print("No active text field found to attach the toolbar.")
         }
+    }
+
+    private func getActiveTextField() -> UITextField? {
+        // Traverse view hierarchy to find the active UITextField
+        for window in UIApplication.shared.windows {
+            if let activeTextField = findActiveTextField(in: window) {
+                return activeTextField
+            }
+        }
+        return nil
+    }
+
+    private func findActiveTextField(in view: UIView) -> UITextField? {
+        for subview in view.subviews {
+            if let textField = subview as? UITextField, textField.isFirstResponder {
+                return textField
+            } else if let found = findActiveTextField(in: subview) {
+                return found
+            }
+        }
+        return nil
     }
 }
