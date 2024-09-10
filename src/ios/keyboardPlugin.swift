@@ -1,6 +1,6 @@
 import UIKit
 
-@objc(KeyboardMinus) class KeyboardMinus: CDVPlugin {
+@objc(KeyboardPlugin) class KeyboardPlugin: CDVPlugin {
     @objc(addMinusButton:)
     func addMinusButton(command: CDVInvokedUrlCommand) {
         let toolbar = UIToolbar()
@@ -35,7 +35,7 @@ import UIKit
     }
 
     private func getActiveTextField() -> UITextField? {
-        // 遍歷視圖層級，尋找當前處於活動狀態的 UITextField
+        // Traverse the view hierarchy to find the active UITextField
         let keyWindow = UIApplication.shared.connectedScenes
             .flatMap { ($0 as? UIWindowScene)?.windows ?? [] }
             .first { $0.isKeyWindow }
