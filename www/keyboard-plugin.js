@@ -1,9 +1,9 @@
 var exec = require('cordova/exec');
 
-var KeyboardMinus = {
+var KeyboardPlugin = {
     addMinusButton: function(successCallback, errorCallback) {
-        exec(successCallback, errorCallback, 'KeyboardMinus', 'addMinusButton', []);
+        exec(successCallback, errorCallback, 'KeyboardPlugin', 'addMinusButton', []);
     }
 };
 
-module.exports = KeyboardMinus;
+module.exports = KeyboardPlugin;
