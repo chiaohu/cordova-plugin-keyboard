@@ -2,7 +2,7 @@ import UIKit
 import WebKit
 
 @objc(KeyboardPlugin) class KeyboardPlugin: CDVPlugin {
-    
+
     @objc(addMinusButton:)
     func addMinusButton(command: CDVInvokedUrlCommand) {
         // Create a toolbar with a minus button
@@ -16,8 +16,8 @@ import WebKit
 
         toolbar.setItems([flexibleSpace, minusButton], animated: false)
 
-        // Add the toolbar to the keyboard of the HTML input
-        addToolbarToWebViewInput(toolbar)
+        // Inject JavaScript to monitor the input element with id="myInput" and attach toolbar to it
+        injectJavaScriptToAttachToolbar(toolbar)
 
         // Send a success callback to JavaScript
         let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK)
@@ -29,42 +29,22 @@ import WebKit
         self.webView?.evaluateJavaScript("document.activeElement.value += '-';", completionHandler: nil)
     }
 
-    private func addToolbarToWebViewInput(_ toolbar: UIToolbar) {
-        // Traverse all subviews to find the WKWebView
+    private func injectJavaScriptToAttachToolbar(_ toolbar: UIToolbar) {
+        // Ensure webView is a WKWebView
         if let webView = self.webView as? WKWebView {
-            webView.evaluateJavaScript("document.activeElement.tagName") { result, error in
-                if let tagName = result as? String, tagName == "INPUT" {
-                    // Detect if the focused element is an input field
-                    if let inputView = self.getWebViewInputAccessoryView() {
-                        inputView.inputAccessoryView = toolbar
-                        inputView.reloadInputViews()
-                    }
-                }
+            webView.evaluateJavaScript("""
+            var inputElement = document.getElementById('myInput');
+            if (inputElement) {
+                inputElement.addEventListener('focus', function() {
+                    // Handle focus event, such as notifying native code
+                    // You can add additional native calls here if needed
+                });
+            } else {
+                console.log('Element with id "myInput" not found');
             }
+            """, completionHandler: nil)
+        } else {
+            print("Failed to cast webView as WKWebView")
         }
-    }
-
-    private func getWebViewInputAccessoryView() -> UIView? {
-        // Return the view responsible for the WebView's input
-        for window in UIApplication.shared.windows {
-            if let firstResponder = window.findFirstResponder() {
-                return firstResponder as? UIView
-            }
-        }
-        return nil
-    }
-}
-
-extension UIView {
-    func findFirstResponder() -> UIResponder? {
-        if self.isFirstResponder {
-            return self
-        }
-        for subview in self.subviews {
-            if let responder = subview.findFirstResponder() {
-                return responder
-            }
-        }
-        return nil
     }
 }
