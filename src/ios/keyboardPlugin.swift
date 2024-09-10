@@ -1,7 +1,7 @@
 import UIKit
 
 @objc(KeyboardPlugin) class KeyboardPlugin: CDVPlugin {
-    
+
     @objc(addMinusButton:)
     func addMinusButton(command: CDVInvokedUrlCommand) {
         // 監聽鍵盤顯示的通知
@@ -13,6 +13,13 @@ import UIKit
     }
 
     @objc func keyboardWillShow(notification: NSNotification) {
+        // 在鍵盤顯示後延遲一點時間再執行
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            self.addToolbarToActiveInput()
+        }
+    }
+
+    private func addToolbarToActiveInput() {
         // 創建工具列並添加減號按鈕
         let toolbar = UIToolbar()
         toolbar.sizeToFit()
@@ -25,7 +32,6 @@ import UIKit
 
         // 獲取第一響應者，並確保它是 UITextField 或 UITextView
         if let activeInput = getActiveInputField() {
-            // 確保只在 UITextField 或 UITextView 上設置工具列
             if let textField = activeInput as? UITextField {
                 textField.inputAccessoryView = toolbar
                 textField.reloadInputViews() // 重新加載輸入視圖以顯示工具列
@@ -42,7 +48,6 @@ import UIKit
     @objc func minusButtonTapped() {
         // 獲取當前第一響應者，並確保它是 UITextField 或 UITextView
         if let activeInput = getActiveInputField() {
-            // 在 UITextField 或 UITextView 中插入減號
             if let textField = activeInput as? UITextField {
                 textField.text = (textField.text ?? "") + "-"
             } else if let textView = activeInput as? UITextView {
