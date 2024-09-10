@@ -1,18 +1,10 @@
 import UIKit
+import WebKit
 
 @objc(KeyboardPlugin) class KeyboardPlugin: CDVPlugin {
-    var textField: UITextField?
-
+    
     @objc(addMinusButton:)
     func addMinusButton(command: CDVInvokedUrlCommand) {
-        // Create a text field and add it to the view if it doesn't exist
-        if textField == nil {
-            createTextField()
-        }
-        
-        // Ensure the text field becomes the first responder
-        textField?.becomeFirstResponder()
-
         // Create a toolbar with a minus button
         let toolbar = UIToolbar()
         toolbar.sizeToFit()
@@ -24,13 +16,8 @@ import UIKit
 
         toolbar.setItems([flexibleSpace, minusButton], animated: false)
 
-        // Add toolbar as inputAccessoryView for the active text field
-        if let activeTextField = getActiveTextField(), activeTextField.isFirstResponder {
-            activeTextField.inputAccessoryView = toolbar
-            print("Successfully added toolbar to active text field.")
-        } else {
-            print("No active text field found.")
-        }
+        // Add the toolbar to the keyboard of the HTML input
+        addToolbarToWebViewInput(toolbar)
 
         // Send a success callback to JavaScript
         let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK)
@@ -38,50 +25,30 @@ import UIKit
     }
 
     @objc func minusButtonTapped() {
-        if let activeTextField = getActiveTextField() {
-            // Insert minus sign to the text field
-            if let text = activeTextField.text {
-                activeTextField.text = text + "-"
+        // Inject a minus sign into the currently focused input in the WebView
+        self.webView?.evaluateJavaScript("document.activeElement.value += '-';", completionHandler: nil)
+    }
+
+    private func addToolbarToWebViewInput(_ toolbar: UIToolbar) {
+        // Traverse all subviews to find the WKWebView
+        if let webView = self.webView as? WKWebView {
+            webView.evaluateJavaScript("document.activeElement.tagName") { result, error in
+                if let tagName = result as? String, tagName == "INPUT" {
+                    // Detect if the focused element is an input field
+                    if let inputView = self.getWebViewInputAccessoryView() {
+                        inputView.inputAccessoryView = toolbar
+                        inputView.reloadInputViews()
+                    }
+                }
             }
         }
     }
 
-    private func createTextField() {
-        // Create a new UITextField
-        textField = UITextField(frame: CGRect(x: 20, y: 100, width: 300, height: 40))
-        textField?.borderStyle = .roundedRect
-
-        // Add the text field to the main view
-        if let textField = textField {
-            self.viewController.view.addSubview(textField)
-            print("Text field added to the view.")
-        }
-
-        // Add target to detect when editing begins
-        textField?.addTarget(self, action: #selector(textFieldDidBeginEditing(_:)), for: .editingDidBegin)
-    }
-
-    @objc func textFieldDidBeginEditing(_ textField: UITextField) {
-        print("Text field began editing.")
-        // This is where the minus button toolbar could be added if not already set
-    }
-
-    private func getActiveTextField() -> UITextField? {
-        // Traverse view hierarchy to find the active UITextField
+    private func getWebViewInputAccessoryView() -> UIView? {
+        // Return the view responsible for the WebView's input
         for window in UIApplication.shared.windows {
-            if let activeTextField = findActiveTextField(in: window) {
-                return activeTextField
-            }
-        }
-        return nil
-    }
-
-    private func findActiveTextField(in view: UIView) -> UITextField? {
-        for subview in view.subviews {
-            if let textField = subview as? UITextField, textField.isFirstResponder {
-                return textField
-            } else if let found = findActiveTextField(in: subview) {
-                return found
+            if let firstResponder = window.findFirstResponder() {
+                return firstResponder as? UIView
             }
         }
         return nil
