@@ -1,18 +1,10 @@
 import UIKit
+import WebKit
 
 @objc(KeyboardPlugin) class KeyboardPlugin: CDVPlugin {
-    var textField: UITextField?
 
     @objc(addMinusButton:)
     func addMinusButton(command: CDVInvokedUrlCommand) {
-        // Create a text field and add it to the view if it doesn't exist
-        if textField == nil {
-            createTextField()
-        }
-        
-        // Ensure the text field becomes the first responder
-        textField?.becomeFirstResponder()
-
         // Create a toolbar with a minus button
         let toolbar = UIToolbar()
         toolbar.sizeToFit()
@@ -24,13 +16,8 @@ import UIKit
 
         toolbar.setItems([flexibleSpace, minusButton], animated: false)
 
-        // Add toolbar as inputAccessoryView for the active text field
-        if let activeTextField = getActiveTextField(), activeTextField.isFirstResponder {
-            activeTextField.inputAccessoryView = toolbar
-            print("Successfully added toolbar to active text field.")
-        } else {
-            print("No active text field found.")
-        }
+        // Attach the toolbar to the input field in the web page
+        attachToolbarToInputField(toolbar)
 
         // Send a success callback to JavaScript
         let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK)
@@ -38,66 +25,27 @@ import UIKit
     }
 
     @objc func minusButtonTapped() {
-        if let activeTextField = getActiveTextField() {
-            // Insert minus sign to the text field
-            if let text = activeTextField.text {
-                activeTextField.text = text + "-"
+        // Inject a minus sign into the currently focused input in the WebView
+        if let webView = self.webView as? WKWebView {
+            webView.evaluateJavaScript("document.activeElement.value += '-';", completionHandler: nil)
+        }
+    }
+
+    private func attachToolbarToInputField(_ toolbar: UIToolbar) {
+        // Ensure webView is a WKWebView
+        if let webView = self.webView as? WKWebView {
+            // Use JavaScript to monitor the specific input field with id="myInput"
+            webView.evaluateJavaScript("""
+            var inputElement = document.getElementById('myInput');
+            if (inputElement) {
+                inputElement.addEventListener('focus', function() {
+                    // Call native code to add the toolbar when the input gets focus
+                    window.webkit.messageHandlers.cordova.postMessage('addToolbar');
+                });
+            } else {
+                console.log('Element with id "myInput" not found');
             }
+            """, completionHandler: nil)
         }
-    }
-
-    private func createTextField() {
-        // Create a new UITextField
-        textField = UITextField(frame: CGRect(x: 20, y: 100, width: 300, height: 40))
-        textField?.borderStyle = .roundedRect
-
-        // Add the text field to the main view
-        if let textField = textField {
-            self.viewController.view.addSubview(textField)
-            print("Text field added to the view.")
-        }
-
-        // Add target to detect when editing begins
-        textField?.addTarget(self, action: #selector(textFieldDidBeginEditing(_:)), for: .editingDidBegin)
-    }
-
-    @objc func textFieldDidBeginEditing(_ textField: UITextField) {
-        print("Text field began editing.")
-        // This is where the minus button toolbar could be added if not already set
-    }
-
-    private func getActiveTextField() -> UITextField? {
-        // Traverse view hierarchy to find the active UITextField
-        for window in UIApplication.shared.windows {
-            if let activeTextField = findActiveTextField(in: window) {
-                return activeTextField
-            }
-        }
-        return nil
-    }
-
-    private func findActiveTextField(in view: UIView) -> UITextField? {
-        for subview in view.subviews {
-            if let textField = subview as? UITextField, textField.isFirstResponder {
-                return textField
-            } else if let found = findActiveTextField(in: subview) {
-                return found
-            }
-        }
-        return nil
-    }
-}
-
-extension UIView {
-    func findFirstResponder() -> UIResponder? {
-        if self.isFirstResponder {
-            return self
-        }
-        for subview in self.subviews {
-            if let responder = subview.findFirstResponder() {
-                return responder
-            }
-        }
-        return nil
     }
 }
