@@ -14,7 +14,7 @@
             </feature>
         </config-file>
     </platform>
-    <js-module src="www/keyboard-plugin.js" name="KeyboardPlugin">
-        <clobbers target="cordova.plugins.KeyboardPlugin" />
-    </js-module>
+    <js-module src="www/keyboardminus.js" name="KeyboardMinus">
+        <clobbers target="cordova.plugins.KeyboardMinus" />
+        </js-module>
 </plugin>
