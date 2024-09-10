@@ -8,16 +8,16 @@
     <keywords>cordova,plugin,swift,keyboard</keywords>
 
     <platform name="ios">
-        <source-file src="src/ios/KeyboardPlugin.swift" />
+        <source-file src="src/ios/keyboardPlugin.swift" />
         <config-file parent="/*" target="config.xml">
-            <feature name="KeyboardMinus">
+            <feature name="KeyboardPlugin">
                 <param name="ios-package" value="KeyboardPlugin" />
             </feature>
         </config-file>
     </platform>
 
     <!-- JavaScript interface -->
-    <js-module src="www/keyboard-plugin.js" name="KeyboardMinus">
-        <clobbers target="cordova.plugins.KeyboardMinus" />
+    <js-module src="www/keyboard-plugin.js" name="KeyboardPlugin">
+        <clobbers target="cordova.plugins.KeyboardPlugin" />
     </js-module>
 </plugin>
