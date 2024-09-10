@@ -35,11 +35,27 @@ import UIKit
     }
 
     private func getActiveTextField() -> UITextField? {
-        // Traverse through the view hierarchy to find the active UITextField
+        // 遍歷視圖層級，尋找當前處於活動狀態的 UITextField
         let keyWindow = UIApplication.shared.connectedScenes
             .flatMap { ($0 as? UIWindowScene)?.windows ?? [] }
             .first { $0.isKeyWindow }
-
+    
         return keyWindow?.findFirstResponder() as? UITextField
+    }
+}
+
+extension UIView {
+    func findFirstResponder() -> UIResponder? {
+        if self.isFirstResponder {
+            return self
+        }
+        
+        for subview in self.subviews {
+            if let responder = subview.findFirstResponder() {
+                return responder
+            }
+        }
+        
+        return nil
     }
 }
