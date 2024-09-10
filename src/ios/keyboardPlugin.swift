@@ -1,10 +1,10 @@
 import UIKit
 
 @objc(KeyboardPlugin) class KeyboardPlugin: CDVPlugin {
-
+    
     @objc(addMinusButton:)
     func addMinusButton(command: CDVInvokedUrlCommand) {
-        // 監聽鍵盤顯示通知
+        // 監聽鍵盤顯示的通知
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow(notification:)), name: UIResponder.keyboardWillShowNotification, object: nil)
 
         // 傳送成功回調到 JavaScript
@@ -25,30 +25,39 @@ import UIKit
 
         // 獲取第一響應者，並確保它是 UITextField 或 UITextView
         if let activeInput = getActiveInputField() {
-            activeInput.inputAccessoryView = toolbar
-            activeInput.reloadInputViews() // 重新加載輸入視圖以顯示工具列
+            // 確保只在 UITextField 或 UITextView 上設置工具列
+            if let textField = activeInput as? UITextField {
+                textField.inputAccessoryView = toolbar
+                textField.reloadInputViews() // 重新加載輸入視圖以顯示工具列
+            } else if let textView = activeInput as? UITextView {
+                textView.inputAccessoryView = toolbar
+                textView.reloadInputViews()
+            }
             print("Successfully added toolbar to active input field.")
         } else {
-            print("No active text field found.")
+            print("No active text field or text view found.")
         }
     }
 
     @objc func minusButtonTapped() {
         // 獲取當前第一響應者，並確保它是 UITextField 或 UITextView
         if let activeInput = getActiveInputField() {
-            // 插入減號符號
-            if var text = activeInput.text {
-                text += "-"
-                activeInput.text = text
+            // 在 UITextField 或 UITextView 中插入減號
+            if let textField = activeInput as? UITextField {
+                textField.text = (textField.text ?? "") + "-"
+            } else if let textView = activeInput as? UITextView {
+                textView.text = (textView.text ?? "") + "-"
             }
         }
     }
 
     // 查找當前活動的 UITextField 或 UITextView
-    private func getActiveInputField() -> (UIView & UITextInput)? {
+    private func getActiveInputField() -> UIView? {
         for window in UIApplication.shared.windows {
-            if let responder = window.findFirstResponder() as? (UIView & UITextInput) {
-                return responder
+            if let responder = window.findFirstResponder() {
+                if responder is UITextField || responder is UITextView {
+                    return responder as? UIView
+                }
             }
         }
         return nil
