@@ -4,7 +4,7 @@ import UIKit
     @objc(addHyphenKey:)
     func addHyphenKey(command: CDVInvokedUrlCommand) {
         DispatchQueue.main.async {
-            if let keyboardVC = UIInputViewController.init() {
+            if let keyboardVC = UIInputViewController.init() as? UIInputViewController {
                 let hyphenButton = UIButton(type: .system)
                 hyphenButton.setTitle("-", for: .normal)
                 hyphenButton.sizeToFit()
