@@ -1,9 +1,7 @@
-var exec = require('cordova/exec');
-
-var IOSKeyboardExtension = {
-    addHyphenKey: function(successCallback, errorCallback) {
-        exec(successCallback, errorCallback, 'IOSKeyboardExtension', 'addHyphenKey', []);
-    }
-};
-
-module.exports = IOSKeyboardExtension;
+document.addEventListener('deviceready', function() {
+    cordova.plugins.KeyboardMinus.addMinusButton(function() {
+        console.log('Minus button added to keyboard');
+    }, function(error) {
+        console.error('Error adding minus button: ', error);
+    });
+});
