@@ -16,8 +16,11 @@ import UIKit
         toolbar.setItems([flexibleSpace, minusButton], animated: false)
 
         // Add the toolbar to the keyboard
-        if let activeTextField = getActiveTextField() {
+        if let activeTextField = getActiveTextField(), activeTextField.isFirstResponder {
             activeTextField.inputAccessoryView = toolbar
+            print("Input accessory view set for: \(activeTextField)")
+        } else {
+            print("Failed to set input accessory view.")
         }
 
         // Send a success callback to JavaScript
@@ -35,12 +38,13 @@ import UIKit
     }
 
     private func getActiveTextField() -> UITextField? {
-        // Traverse the view hierarchy to find the active UITextField
         let keyWindow = UIApplication.shared.connectedScenes
             .flatMap { ($0 as? UIWindowScene)?.windows ?? [] }
             .first { $0.isKeyWindow }
     
-        return keyWindow?.findFirstResponder() as? UITextField
+        let activeTextField = keyWindow?.findFirstResponder() as? UITextField
+        print("Active text field: \(String(describing: activeTextField))")  // 添加日誌輸出
+        return activeTextField
     }
 }
 
