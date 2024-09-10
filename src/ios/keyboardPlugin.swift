@@ -2,7 +2,7 @@ import UIKit
 import WebKit
 
 @objc(KeyboardPlugin) class KeyboardPlugin: CDVPlugin {
-
+    
     @objc(addMinusButton:)
     func addMinusButton(command: CDVInvokedUrlCommand) {
         // Create a toolbar with a minus button
@@ -26,7 +26,9 @@ import WebKit
 
     @objc func minusButtonTapped() {
         // Inject a minus sign into the currently focused input in the WebView
-        self.webView?.evaluateJavaScript("document.activeElement.value += '-';", completionHandler: nil)
+        if let webView = self.webView as? WKWebView {
+            webView.evaluateJavaScript("document.activeElement.value += '-';", completionHandler: nil)
+        }
     }
 
     private func injectJavaScriptToAttachToolbar(_ toolbar: UIToolbar) {
